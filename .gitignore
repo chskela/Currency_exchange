@@ -28,6 +28,9 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
+### IntelliJ IDEA ###
+.idea
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -37,6 +40,3 @@ bin/
 
 ### VS Code ###
 .vscode/
-
-### Mac OS ###
-.DS_Store
