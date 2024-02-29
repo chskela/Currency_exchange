@@ -1,1 +1,1 @@
-rootProject.name = "com.chskela"
+rootProject.name = "com.currency_exchange.currency_exchange"
