@@ -1,5 +1,6 @@
 package com.currency_exchange
 
+import com.currency_exchange.dao.DatabaseSingleton
 import com.currency_exchange.plugins.*
 import io.ktor.server.application.*
 
@@ -8,6 +9,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    DatabaseSingleton.init(environment.config)
     configureSerialization()
     configureRouting()
 }
