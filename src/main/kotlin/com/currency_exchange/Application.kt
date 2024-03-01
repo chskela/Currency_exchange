@@ -1,7 +1,8 @@
 package com.currency_exchange
 
 import com.currency_exchange.data.dao.DatabaseSingleton
-import com.currency_exchange.plugins.*
+import com.currency_exchange.plugins.configureRouting
+import com.currency_exchange.plugins.configureSerialization
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
