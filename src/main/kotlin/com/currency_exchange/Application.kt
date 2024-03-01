@@ -1,6 +1,6 @@
 package com.currency_exchange
 
-import com.currency_exchange.dao.DatabaseSingleton
+import com.currency_exchange.data.dao.DatabaseSingleton
 import com.currency_exchange.plugins.*
 import io.ktor.server.application.*
 

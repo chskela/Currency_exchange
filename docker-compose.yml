@@ -8,9 +8,12 @@ services:
         condition: service_healthy
   db:
     image: postgres
+    container_name: currency_exchange_db
     volumes:
       - ./tmp/db:/var/lib/postgresql/data
     environment:
+#      POSTGRES_PASSWORD: postgres
+#      POSTGRES_USER: postgres
       POSTGRES_DB: currency_exchange
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
