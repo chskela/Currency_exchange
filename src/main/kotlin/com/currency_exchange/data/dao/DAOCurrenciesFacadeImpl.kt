@@ -6,14 +6,14 @@ import com.currency_exchange.models.Currency
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
-class DAOFacadeImpl : DAOFacade {
+class DAOCurrenciesFacadeImpl : DAOCurrenciesFacade {
     override suspend fun getAllCurrencies(): List<Currency> = dbQuery {
-        Currencies.selectAll().map(::resultRowToArticle)
+        Currencies.selectAll().map(::resultRowToCurrency)
     }
 
     override suspend fun getCurrencyByCode(code: String): Currency? = dbQuery {
         Currencies.selectAll().where { Currencies.code.lowerCase() eq code.lowercase() }
-            .map(::resultRowToArticle)
+            .map(::resultRowToCurrency)
             .singleOrNull()
     }
 
@@ -40,7 +40,7 @@ class DAOFacadeImpl : DAOFacade {
         dbQuery { Currencies.deleteWhere { Currencies.code eq code } }
     }
 
-    private fun resultRowToArticle(row: ResultRow): Currency = Currency(
+    private fun resultRowToCurrency(row: ResultRow): Currency = Currency(
         code = row[Currencies.code],
         name = row[Currencies.name],
         sign = row[Currencies.sign]

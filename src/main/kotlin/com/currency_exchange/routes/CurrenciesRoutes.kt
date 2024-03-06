@@ -1,6 +1,6 @@
 package com.currency_exchange.routes
 
-import com.currency_exchange.dao
+import com.currency_exchange.daoCurrencies
 import com.currency_exchange.models.Currency
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -9,28 +9,29 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.currenciesRoutes() {
+    val missingCode = "Missing code"
     route("/currencies") {
         get {
-            call.respond(HttpStatusCode.OK, dao.getAllCurrencies())
+            call.respond(HttpStatusCode.OK, daoCurrencies.getAllCurrencies())
         }
 
         post {
             val currency = call.receiveNullable<Currency>() ?: return@post call.respondText(
-                text = "Missing code",
+                text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
             // TODO: handler 409
-            dao.addCurrency(code = currency.code, name = currency.name, sign = currency.sign)
+            daoCurrencies.addCurrency(code = currency.code, name = currency.name, sign = currency.sign)
         }
     }
 
     route("/currency") {
         get("/{code}") {
             val code = call.parameters["code"] ?: return@get call.respondText(
-                text = "Missing code",
+                text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
-            val currency = dao.getCurrencyByCode(code) ?: return@get call.respondText(
+            val currency = daoCurrencies.getCurrencyByCode(code) ?: return@get call.respondText(
                 text = "No currency found",
                 status = HttpStatusCode.NotFound
             )
@@ -41,11 +42,11 @@ fun Route.currenciesRoutes() {
 
         delete("/{code}") {
             val code = call.parameters["code"] ?: return@delete call.respondText(
-                text = "Missing code",
+                text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
 
-            dao.deleteCurrencyByCode(code)
+            daoCurrencies.deleteCurrencyByCode(code)
         }
 
     }
