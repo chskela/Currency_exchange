@@ -1,6 +1,5 @@
 package com.currency_exchange.routes
 
-import com.currency_exchange.daoCurrencies
 import com.currency_exchange.daoExchangeRates
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -8,32 +7,29 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.exchangeRateRoutes() {
-    val pattern = Regex("""(?<baseCode>[a-zA_Z]{3})(?<targetCode>[a-zA_Z]{3})""")
     val missingCode = "Missing code"
 
-    route("/exchangeRate/$pattern") {
+    route("/exchangeRate") {
 
-        get {
-            val baseCode = call.parameters["baseCode"]?: return@get call.respondText(
+        get(Regex("""/(?<currencyPair>[a-zA_Z]{6})""")) {
+            val currencyPair = call.parameters["currencyPair"] ?: return@get call.respondText(
                 text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
-            val targetCode = call.parameters["targetCode"]?: return@get call.respondText(
-                text = missingCode,
-                status = HttpStatusCode.BadRequest
-            )
+            println("currencyPair: $currencyPair")
+            val (baseCode, targetCode) = currencyPair.windowed(3, 3)
+
+            println("baseCode $baseCode, targetCode: $targetCode")
+            val exchangeRate =
+                daoExchangeRates.getExchangeRatesByCodes(baseCode, targetCode) ?: return@get call.respondText(
+                    text = "No exchange rate found",
+                    status = HttpStatusCode.NotFound
+                )
+
+            call.respond(HttpStatusCode.OK, exchangeRate)
         }
 
         patch {
-            val baseCode = call.parameters["baseCode"]?: return@patch call.respondText(
-                text = missingCode,
-                status = HttpStatusCode.BadRequest
-            )
-            val targetCode = call.parameters["targetCode"]?: return@patch call.respondText(
-                text = missingCode,
-                status = HttpStatusCode.BadRequest
-            )
-
 
         }
     }
@@ -43,13 +39,8 @@ fun Route.exchangeRateRoutes() {
             call.respond(HttpStatusCode.OK, daoExchangeRates.getAllExchangeRates())
         }
 
-        patch ("/{code}") {
-            val code = call.parameters["code"] ?: return@patch call.respondText(
-                text = missingCode,
-                status = HttpStatusCode.BadRequest
-            )
+        post {
 
-            daoCurrencies.deleteCurrencyByCode(code)
         }
     }
 }

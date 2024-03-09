@@ -1,6 +1,5 @@
 package com.currency_exchange.data.dao
 
-import com.currency_exchange.models.Currency
 import com.currency_exchange.models.ExchangeRate
 
 interface DAOExchangeRatesFacade {
