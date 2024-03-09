@@ -41,6 +41,7 @@ class DAOCurrenciesFacadeImpl : DAOCurrenciesFacade {
     }
 
     private fun resultRowToCurrency(row: ResultRow): Currency = Currency(
+        id = row[Currencies.id].value,
         code = row[Currencies.code],
         name = row[Currencies.name],
         sign = row[Currencies.sign]

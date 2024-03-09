@@ -44,17 +44,27 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
     }
 
     override suspend fun addExchangeRate(baseCurrencyCode: String, targetCurrencyCode: String, rate: Double) {
-        dbQuery {  }
+        dbQuery { }
     }
 
     override suspend fun updateCurrency(baseCurrencyCode: String, targetCurrencyCode: String, rate: Double) {
-        dbQuery {  }
+        dbQuery { }
     }
 
     private fun resultRowToExchangeRate(row: ResultRow): ExchangeRate = ExchangeRate(
-        row[ExchangeRates.id].value,
-        Currency(code = row[Currencies.code], name = row[Currencies.name], sign = row[Currencies.sign]),
-        Currency(row[Currencies.code], row[Currencies.name], row[Currencies.sign]),
-        row[ExchangeRates.rate]
+        id = row[baseCurrency[Currencies.id]].value,
+        baseCurrency = Currency(
+            id = row[baseCurrency[Currencies.id]].value,
+            code = row[baseCurrency[Currencies.code]],
+            name = row[baseCurrency[Currencies.name]],
+            sign = row[baseCurrency[Currencies.sign]]
+        ),
+        targetCurrency = Currency(
+            id = row[targetCurrency[Currencies.id]].value,
+            code = row[targetCurrency[Currencies.code]],
+            name = row[targetCurrency[Currencies.name]],
+            sign = row[targetCurrency[Currencies.sign]]
+        ),
+        rate = row[ExchangeRates.rate]
     )
 }
