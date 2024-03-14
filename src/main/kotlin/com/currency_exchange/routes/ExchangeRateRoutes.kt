@@ -3,6 +3,7 @@ package com.currency_exchange.routes
 import com.currency_exchange.daoExchangeRates
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -40,7 +41,27 @@ fun Route.exchangeRateRoutes() {
         }
 
         post {
+            val formParameters = call.receiveParameters()
+            val baseCurrencyCode = formParameters["baseCurrencyCode"] ?: return@post call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+            val targetCurrencyCode = formParameters["targetCurrencyCode"] ?: return@post call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+            val rate = formParameters["rate"] ?: return@post call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
 
+            val exchangeRate = daoExchangeRates.addExchangeRate(baseCurrencyCode, targetCurrencyCode, rate.toDouble())
+                ?: return@post call.respondText(
+                    text = "Failed to add exchange rate",
+                    status = HttpStatusCode.InternalServerError
+                )
+
+            call.respond(HttpStatusCode.Created, exchangeRate)
         }
     }
 }

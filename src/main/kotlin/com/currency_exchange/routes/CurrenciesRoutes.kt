@@ -1,7 +1,6 @@
 package com.currency_exchange.routes
 
 import com.currency_exchange.daoCurrencies
-import com.currency_exchange.models.Currency
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -16,12 +15,27 @@ fun Route.currenciesRoutes() {
         }
 
         post {
-            val currency = call.receiveNullable<Currency>() ?: return@post call.respondText(
+            val formParameters = call.receiveParameters()
+            val code = formParameters["code"] ?: return@post call.respondText(
                 text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
-            // TODO: handler 409
-            daoCurrencies.addCurrency(code = currency.code, name = currency.name, sign = currency.sign)
+            val name = formParameters["name"] ?: return@post call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+            val sign = formParameters["sign"] ?: return@post call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+
+
+            val currency =
+                daoCurrencies.addCurrency(code = code, name = name, sign = sign) ?: return@post call.respondText(
+                    text = "Failed to add exchange rate",
+                    status = HttpStatusCode.InternalServerError
+                )
+            call.respond(HttpStatusCode.Created, currency)
         }
     }
 

@@ -17,15 +17,15 @@ class DAOCurrenciesFacadeImpl : DAOCurrenciesFacade {
             .singleOrNull()
     }
 
-    override suspend fun addCurrency(code: String, name: String, sign: String) {
-        dbQuery {
-            Currencies.insert {
-                it[this.code] = code
-                it[this.name] = name
-                it[this.sign] = sign
-            }
+    override suspend fun addCurrency(code: String, name: String, sign: String): Currency? = dbQuery {
+        val insertStatement = Currencies.insert {
+            it[this.code] = code
+            it[this.name] = name
+            it[this.sign] = sign
         }
+        insertStatement.resultedValues?.singleOrNull()?.let(::resultRowToCurrency)
     }
+
 
     override suspend fun updateCurrency(currency: Currency) {
         dbQuery {

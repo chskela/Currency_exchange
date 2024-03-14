@@ -15,24 +15,43 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
         allExchangeRates().map(::resultRowToExchangeRate)
     }
 
+    override suspend fun getExchangeRateById(id: Int): ExchangeRate? = dbQuery {
+        allExchangeRates { ExchangeRates.id eq id }.map(::resultRowToExchangeRate).singleOrNull()
+    }
+
     override suspend fun getExchangeRatesByCodes(baseCurrencyCode: String, targetCurrencyCode: String): ExchangeRate? =
         dbQuery {
-            allExchangeRates().where {
+            allExchangeRates {
                 (ExchangeRates.baseCurrencyId eq getCurrencyIdByCode(baseCurrencyCode)) and
                         (ExchangeRates.targetCurrencyId eq getCurrencyIdByCode(targetCurrencyCode))
-            }.map(::resultRowToExchangeRate).firstOrNull()
+            }.map(::resultRowToExchangeRate).singleOrNull()
         }
 
-    override suspend fun addExchangeRate(baseCurrencyCode: String, targetCurrencyCode: String, rate: Double) {
-        dbQuery { }
+    override suspend fun addExchangeRate(
+        baseCurrencyCode: String,
+        targetCurrencyCode: String,
+        rate: Double
+    ): ExchangeRate? = dbQuery {
+        getCurrencyIdByCode(baseCurrencyCode)?.let { baseId ->
+            getCurrencyIdByCode(targetCurrencyCode)?.let { targetId ->
+                ExchangeRates.insertAndGetId {
+                    it[baseCurrencyId] = baseId
+                    it[targetCurrencyId] = targetId
+                    it[ExchangeRates.rate] = rate
+                }
+            }
+        }?.let {
+            allExchangeRates { ExchangeRates.id eq it.value }.map(::resultRowToExchangeRate).singleOrNull()
+        }
     }
+
 
     override suspend fun updateCurrency(baseCurrencyCode: String, targetCurrencyCode: String, rate: Double) {
         dbQuery { }
     }
 
     private fun resultRowToExchangeRate(row: ResultRow): ExchangeRate = ExchangeRate(
-        id = row[baseCurrency[Currencies.id]].value,
+        id = row[ExchangeRates.id].value,
         baseCurrency = Currency(
             id = row[baseCurrency[Currencies.id]].value,
             code = row[baseCurrency[Currencies.code]],
@@ -48,7 +67,7 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
         rate = row[ExchangeRates.rate]
     )
 
-    private fun allExchangeRates() = ExchangeRates.join(
+    private fun allExchangeRates(predicate: SqlExpressionBuilder.() -> Op<Boolean> = { Op.TRUE }) = ExchangeRates.join(
         baseCurrency,
         JoinType.INNER,
         onColumn = ExchangeRates.baseCurrencyId,
@@ -69,7 +88,7 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
         targetCurrency[Currencies.name],
         targetCurrency[Currencies.sign],
         ExchangeRates.rate,
-    )
+    ).where { predicate() }
 
     private fun getCurrencyIdByCode(currencyCode: String) = Currencies.select(Currencies.id)
         .where { Currencies.code.lowerCase() eq currencyCode.lowercase() }
