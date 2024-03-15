@@ -4,6 +4,8 @@ val kotlin_version: String by project
 val logback_version: String by project
 val exposed_version: String by project
 val postgresql_version: String by project
+val h2_version: String by project
+val kotestVersion: String by project
 
 plugins {
     application
@@ -42,6 +44,12 @@ dependencies {
 
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
+    testImplementation("com.h2database:h2:$h2_version")
+
+    testImplementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
 }
 
 ktor {
