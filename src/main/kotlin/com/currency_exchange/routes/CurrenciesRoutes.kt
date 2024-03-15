@@ -1,11 +1,16 @@
 package com.currency_exchange.routes
 
 import com.currency_exchange.daoCurrencies
+import com.currency_exchange.utils.Messages.CURRENCY_CODE_IS_MISSING
+import com.currency_exchange.utils.Messages.CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS
+import com.currency_exchange.utils.Messages.NO_CURRENCY_FOUND
+import com.currency_exchange.utils.Messages.REQUIRED_FORM_FIELD_IS_MISSING
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.currenciesRoutes() {
     val missingCode = "Missing code"
@@ -53,7 +58,6 @@ fun Route.currenciesRoutes() {
             call.respond(HttpStatusCode.OK, currency)
         }
 
-
         delete("/{code}") {
             val code = call.parameters["code"] ?: return@delete call.respondText(
                 text = missingCode,
@@ -62,6 +66,5 @@ fun Route.currenciesRoutes() {
 
             daoCurrencies.deleteCurrencyByCode(code)
         }
-
     }
 }
