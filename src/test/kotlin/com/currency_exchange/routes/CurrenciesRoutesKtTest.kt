@@ -1,19 +1,19 @@
 package com.currency_exchange.routes
 
 import com.currency_exchange.data.models.Currencies
-import com.currency_exchange.data.models.ExchangeRates
 import com.currency_exchange.models.Currency
+import com.currency_exchange.routes.utils.Constants.currencies
+import com.currency_exchange.routes.utils.Constants.listOfTables
+import com.currency_exchange.routes.utils.Constants.usd
+import com.currency_exchange.routes.utils.httpClient
 import com.currency_exchange.utils.Messages.CURRENCY_CODE_IS_MISSING
 import com.currency_exchange.utils.Messages.CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS
 import com.currency_exchange.utils.Messages.NO_CURRENCY_FOUND
 import com.currency_exchange.utils.Messages.REQUIRED_FORM_FIELD_IS_MISSING
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -25,13 +25,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 open class CurrenciesRoutesKtTest {
-    private val usd = Currency(1, "USD", "United States dollar", "$")
-    private val eur = Currency(2, "EUR", "Euro Member Countries", "€")
-    private val rub = Currency(3, "RUB", "Russia Ruble", "₽")
-    private val currencies = listOf(usd, eur, rub)
-
-    private val listOfTables = arrayOf(Currencies, ExchangeRates)
-
     @BeforeTest
     fun setUp() {
         Database.connect("jdbc:h2:mem:fmdb;DB_CLOSE_DELAY=-1;MODE=MYSQL", driver = "org.h2.Driver")
@@ -56,33 +49,19 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `get request returns all list of currencies`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //when
         val response = client.get("/currencies")
         val list: List<Currency> = response.body()
         //then
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(list.size, currencies.size)
+        assertEquals(currencies.size, list.size)
     }
 
     @Test
     fun `get request returns existing currency`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //when
         val response = client.get("/currency/USD")
@@ -96,14 +75,7 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `get request returns not found for not existing currency`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //when
         val response = client.get("/currency/TES")
@@ -115,14 +87,7 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `get request returns bad request for invalid currency code`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //when
         val response = client.get("/currency/te")
@@ -134,14 +99,7 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `post request is adding new currency`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //given
         val code = "AUD"
@@ -164,14 +122,7 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `post request is returning bad request a required form field is missing`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
+        val client = httpClient()
 
         //given
         val code = "AUD"
@@ -191,15 +142,7 @@ open class CurrenciesRoutesKtTest {
 
     @Test
     fun `post request is returning conflict when currency already exists`() = testApplication {
-        environment {
-            config = ApplicationConfig("application-test.conf")
-        }
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-
+        val client = httpClient()
 
         //when
         val response = client.post("/currencies") {
