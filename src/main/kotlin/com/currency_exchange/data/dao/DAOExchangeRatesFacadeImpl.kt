@@ -46,8 +46,20 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
     }
 
 
-    override suspend fun updateCurrency(baseCurrencyCode: String, targetCurrencyCode: String, rate: Double) {
-        dbQuery { }
+    override suspend fun updateExchangeRate(
+        baseCurrencyCode: String,
+        targetCurrencyCode: String,
+        rate: Double
+    ): ExchangeRate? = dbQuery {
+        ExchangeRates.update({
+            (ExchangeRates.baseCurrencyId eq getCurrencyIdByCode(baseCurrencyCode)) and
+                    (ExchangeRates.targetCurrencyId eq getCurrencyIdByCode(targetCurrencyCode))
+        }) { it[ExchangeRates.rate] = rate }.let {
+            if (it == 0) {
+                return@dbQuery null
+            }
+            getExchangeRatesByCodes(baseCurrencyCode, targetCurrencyCode)
+        }
     }
 
     private fun resultRowToExchangeRate(row: ResultRow): ExchangeRate = ExchangeRate(

@@ -17,10 +17,8 @@ fun Route.exchangeRateRoutes() {
                 text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
-            println("currencyPair: $currencyPair")
             val (baseCode, targetCode) = currencyPair.windowed(3, 3)
 
-            println("baseCode $baseCode, targetCode: $targetCode")
             val exchangeRate =
                 daoExchangeRates.getExchangeRatesByCodes(baseCode, targetCode) ?: return@get call.respondText(
                     text = "No exchange rate found",
@@ -30,8 +28,23 @@ fun Route.exchangeRateRoutes() {
             call.respond(HttpStatusCode.OK, exchangeRate)
         }
 
-        patch {
-
+        patch(Regex("""/(?<currencyPair>[a-zA_Z]{6})""")) {
+            val currencyPair = call.parameters["currencyPair"] ?: return@patch call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+            val (baseCode, targetCode) = currencyPair.windowed(3, 3)
+            val formParameters = call.receiveParameters()
+            val rate = formParameters["rate"] ?: return@patch call.respondText(
+                text = missingCode,
+                status = HttpStatusCode.BadRequest
+            )
+            val exchangeRate = daoExchangeRates.updateExchangeRate(baseCode, targetCode, rate.toDouble())
+                ?: return@patch call.respondText(
+                    text = "Failed to add exchange rate",
+                    status = HttpStatusCode.InternalServerError
+                )
+            call.respond(HttpStatusCode.OK, exchangeRate)
         }
     }
 
