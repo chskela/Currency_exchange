@@ -1,38 +1,55 @@
 package com.currency_exchange.routes
 
 import com.currency_exchange.daoExchangeRates
+import com.currency_exchange.utils.Messages.CURRENCY_PAIR_WITH_THIS_CODE_ALREADY_EXISTS
+import com.currency_exchange.utils.Messages.EXCHANGE_RATE_FOR_PAIR_NOT_FOUND
+import com.currency_exchange.utils.Messages.PAIR_CURRENCY_CODES_ARE_MISSING
+import com.currency_exchange.utils.Messages.REQUIRED_FORM_FIELD_IS_MISSING
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.exchangeRateRoutes() {
     val missingCode = "Missing code"
 
     route("/exchangeRate") {
 
-        get(Regex("""/(?<currencyPair>[a-zA_Z]{6})""")) {
+        get("/{currencyPair}") {
             val currencyPair = call.parameters["currencyPair"] ?: return@get call.respondText(
-                text = missingCode,
+                text = PAIR_CURRENCY_CODES_ARE_MISSING,
                 status = HttpStatusCode.BadRequest
             )
+
+            if (currencyPair.length != 6) return@get call.respondText(
+                text = PAIR_CURRENCY_CODES_ARE_MISSING,
+                status = HttpStatusCode.BadRequest
+            )
+
             val (baseCode, targetCode) = currencyPair.windowed(3, 3)
 
             val exchangeRate =
                 daoExchangeRates.getExchangeRatesByCodes(baseCode, targetCode) ?: return@get call.respondText(
-                    text = "No exchange rate found",
+                    text = EXCHANGE_RATE_FOR_PAIR_NOT_FOUND,
                     status = HttpStatusCode.NotFound
                 )
 
             call.respond(HttpStatusCode.OK, exchangeRate)
         }
 
-        patch(Regex("""/(?<currencyPair>[a-zA_Z]{6})""")) {
+        patch("/{currencyPair}") {
             val currencyPair = call.parameters["currencyPair"] ?: return@patch call.respondText(
-                text = missingCode,
+                text = PAIR_CURRENCY_CODES_ARE_MISSING,
                 status = HttpStatusCode.BadRequest
             )
+
+            if (currencyPair.length != 6) return@patch call.respondText(
+                text = PAIR_CURRENCY_CODES_ARE_MISSING,
+                status = HttpStatusCode.BadRequest
+            )
+
             val (baseCode, targetCode) = currencyPair.windowed(3, 3)
             val formParameters = call.receiveParameters()
             val rate = formParameters["rate"] ?: return@patch call.respondText(
@@ -56,25 +73,30 @@ fun Route.exchangeRateRoutes() {
         post {
             val formParameters = call.receiveParameters()
             val baseCurrencyCode = formParameters["baseCurrencyCode"] ?: return@post call.respondText(
-                text = missingCode,
+                text = REQUIRED_FORM_FIELD_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
             val targetCurrencyCode = formParameters["targetCurrencyCode"] ?: return@post call.respondText(
-                text = missingCode,
+                text = REQUIRED_FORM_FIELD_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
             val rate = formParameters["rate"] ?: return@post call.respondText(
-                text = missingCode,
+                text = REQUIRED_FORM_FIELD_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
 
-            val exchangeRate = daoExchangeRates.addExchangeRate(baseCurrencyCode, targetCurrencyCode, rate.toDouble())
-                ?: return@post call.respondText(
-                    text = "Failed to add exchange rate",
-                    status = HttpStatusCode.InternalServerError
+            val exchangeRate = try {
+                daoExchangeRates.addExchangeRate(baseCurrencyCode, targetCurrencyCode, rate.toDouble())
+            } catch (e: ExposedSQLException) {
+                return@post call.respondText(
+                    text = CURRENCY_PAIR_WITH_THIS_CODE_ALREADY_EXISTS,
+                    status = HttpStatusCode.Conflict
                 )
+            }
 
-            call.respond(HttpStatusCode.Created, exchangeRate)
+            exchangeRate?.let {
+                call.respond(HttpStatusCode.Created, it)
+            }
         }
     }
 }
