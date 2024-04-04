@@ -1,10 +1,14 @@
 package com.currency_exchange.routes
 
 import com.currency_exchange.daoCurrencies
+import com.currency_exchange.utils.Constants.INTEGRITY_CONSTRAINT_VIOLATION_CODE
 import com.currency_exchange.utils.Messages.CURRENCY_CODE_IS_MISSING
+import com.currency_exchange.utils.Messages.CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT
 import com.currency_exchange.utils.Messages.CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS
 import com.currency_exchange.utils.Messages.NO_CURRENCY_FOUND
 import com.currency_exchange.utils.Messages.REQUIRED_FORM_FIELD_IS_MISSING
+import com.currency_exchange.utils.Messages.SOMETHING_WENT_WRONG
+import com.currency_exchange.utils.Validation.isValidCurrencyCode
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -12,67 +16,117 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 
-fun Route.currenciesRoutes() {
-    val missingCode = "Missing code"
+fun Routing.currenciesRoutes() {
     route("/currencies") {
-        get {
-            call.respond(HttpStatusCode.OK, daoCurrencies.getAllCurrencies())
-        }
-
-        post {
-            val formParameters = call.receiveParameters()
-            val code = formParameters["code"] ?: return@post call.respondText(
-                text = REQUIRED_FORM_FIELD_IS_MISSING,
-                status = HttpStatusCode.BadRequest
-            )
-            val name = formParameters["name"] ?: return@post call.respondText(
-                text = REQUIRED_FORM_FIELD_IS_MISSING,
-                status = HttpStatusCode.BadRequest
-            )
-            val sign = formParameters["sign"] ?: return@post call.respondText(
-                text = REQUIRED_FORM_FIELD_IS_MISSING,
-                status = HttpStatusCode.BadRequest
-            )
-
-            val currency = try {
-                daoCurrencies.addCurrency(code = code, name = name, sign = sign)
-            } catch (e: ExposedSQLException) {
-                return@post call.respondText(
-                    text = CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS,
-                    status = HttpStatusCode.Conflict
-                )
-            }
-            currency?.let {
-                call.respond(HttpStatusCode.Created, it)
-            }
-        }
+        getAllCurrencies()
+        addCurrency()
     }
 
     route("/currency") {
-        get("/{code}") {
-            val code = call.parameters["code"] ?: return@get call.respondText(
+        getCurrencyByCode()
+        deleteCurrencyByCode()
+    }
+}
+
+private fun Route.deleteCurrencyByCode() {
+    delete("/{code}") {
+        val code = call.parameters["code"]
+            ?: return@delete call.respondText(
                 text = CURRENCY_CODE_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
-            if (code.length != 3) return@get call.respondText(
+
+        if (!isValidCurrencyCode(code)) return@delete call.respondText(
+            text = CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT,
+            status = HttpStatusCode.BadRequest
+        )
+
+        try {
+            daoCurrencies.deleteCurrencyByCode(code)
+        } catch (e: Exception) {
+            return@delete call.respondText(
+                text = SOMETHING_WENT_WRONG,
+                status = HttpStatusCode.InternalServerError
+            )
+        }
+        daoCurrencies.deleteCurrencyByCode(code)
+    }
+}
+
+private fun Route.getCurrencyByCode() {
+    get("/{code}") {
+        val code = call.parameters["code"]
+            ?: return@get call.respondText(
                 text = CURRENCY_CODE_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
-            val currency = daoCurrencies.getCurrencyByCode(code) ?: return@get call.respondText(
+
+        if (!isValidCurrencyCode(code)) return@get call.respondText(
+            text = CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT,
+            status = HttpStatusCode.BadRequest
+        )
+
+        try {
+            daoCurrencies.getCurrencyByCode(code) ?: return@get call.respondText(
                 text = NO_CURRENCY_FOUND,
                 status = HttpStatusCode.NotFound
             )
-
+        } catch (e: Exception) {
+            return@get call.respondText(
+                text = SOMETHING_WENT_WRONG,
+                status = HttpStatusCode.InternalServerError
+            )
+        }.let { currency ->
             call.respond(HttpStatusCode.OK, currency)
         }
+    }
+}
 
-        delete("/{code}") {
-            val code = call.parameters["code"] ?: return@delete call.respondText(
-                text = missingCode,
+private fun Route.getAllCurrencies() {
+    get {
+        try {
+            daoCurrencies.getAllCurrencies()
+        } catch (e: Exception) {
+            return@get call.respondText(
+                text = SOMETHING_WENT_WRONG,
+                status = HttpStatusCode.InternalServerError
+            )
+        }.let { listCurrencies ->
+            call.respond(HttpStatusCode.OK, listCurrencies)
+        }
+    }
+}
+
+private fun Route.addCurrency() {
+    post {
+        val formParameters = call.receiveParameters()
+        val code = formParameters["code"]
+        val name = formParameters["name"]
+        val sign = formParameters["sign"]
+
+        if (code == null || name == null || sign == null) {
+            return@post call.respondText(
+                text = REQUIRED_FORM_FIELD_IS_MISSING,
                 status = HttpStatusCode.BadRequest
             )
+        }
 
-            daoCurrencies.deleteCurrencyByCode(code)
+        try {
+            daoCurrencies.addCurrency(code = code, name = name, sign = sign)
+        } catch (e: Exception) {
+            return@post if (e is ExposedSQLException && e.sqlState == INTEGRITY_CONSTRAINT_VIOLATION_CODE) {
+                call.respondText(
+                    text = CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS,
+                    status = HttpStatusCode.Conflict
+                )
+            } else {
+                call.respondText(
+                    text = SOMETHING_WENT_WRONG,
+                    status = HttpStatusCode.InternalServerError
+                )
+            }
+        }?.let { currency ->
+            call.respond(HttpStatusCode.Created, currency)
         }
     }
 }

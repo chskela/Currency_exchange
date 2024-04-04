@@ -17,7 +17,6 @@ object DatabaseSingleton {
         transaction(database) {
             SchemaUtils.create(Currencies)
             SchemaUtils.create(ExchangeRates)
-
         }
     }
 
