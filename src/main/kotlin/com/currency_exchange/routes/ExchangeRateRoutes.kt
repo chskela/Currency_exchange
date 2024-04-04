@@ -11,6 +11,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
+import java.math.BigDecimal
 
 fun Route.exchangeRateRoutes() {
     val missingCode = "Missing code"
@@ -56,7 +57,7 @@ fun Route.exchangeRateRoutes() {
                 text = missingCode,
                 status = HttpStatusCode.BadRequest
             )
-            val exchangeRate = daoExchangeRates.updateExchangeRate(baseCode, targetCode, rate.toDouble())
+            val exchangeRate = daoExchangeRates.updateExchangeRate(baseCode, targetCode, rate.toBigDecimal())
                 ?: return@patch call.respondText(
                     text = "Failed to add exchange rate",
                     status = HttpStatusCode.InternalServerError
@@ -86,7 +87,7 @@ fun Route.exchangeRateRoutes() {
             )
 
             val exchangeRate = try {
-                daoExchangeRates.addExchangeRate(baseCurrencyCode, targetCurrencyCode, rate.toDouble())
+                daoExchangeRates.addExchangeRate(baseCurrencyCode, targetCurrencyCode, BigDecimal(rate))
             } catch (e: ExposedSQLException) {
                 return@post call.respondText(
                     text = CURRENCY_PAIR_WITH_THIS_CODE_ALREADY_EXISTS,

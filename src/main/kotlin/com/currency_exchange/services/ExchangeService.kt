@@ -4,10 +4,11 @@ import com.currency_exchange.data.dao.DAOExchangeRatesFacade
 import com.currency_exchange.models.Exchange
 import com.currency_exchange.models.ExchangeRate
 import kotlinx.coroutines.*
+import java.math.BigDecimal
 
 class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade) {
 
-    suspend fun getExchange(from: String, to: String, amount: Double): Exchange? = coroutineScope {
+    suspend fun getExchange(from: String, to: String, amount: BigDecimal): Exchange? = coroutineScope {
 
         val directExchangeRate = getDirectExchangeRate(from, to)
         val reverseExchangeRate = async(start = CoroutineStart.LAZY) { getDirectExchangeRate(to, from) }.await()
@@ -24,7 +25,7 @@ class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade
             )
 
             reverseExchangeRate != null -> {
-                val rate = 1 / reverseExchangeRate.rate
+                val rate = BigDecimal(1) / reverseExchangeRate.rate
                  Exchange(
                     reverseExchangeRate.targetCurrency,
                     reverseExchangeRate.baseCurrency,

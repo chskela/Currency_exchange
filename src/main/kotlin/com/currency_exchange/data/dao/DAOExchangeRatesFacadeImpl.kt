@@ -6,6 +6,7 @@ import com.currency_exchange.data.models.ExchangeRates
 import com.currency_exchange.models.Currency
 import com.currency_exchange.models.ExchangeRate
 import org.jetbrains.exposed.sql.*
+import java.math.BigDecimal
 
 class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
     private val baseCurrency = Currencies.alias("baseCurrency")
@@ -30,7 +31,7 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
     override suspend fun addExchangeRate(
         baseCurrencyCode: String,
         targetCurrencyCode: String,
-        rate: Double
+        rate: BigDecimal
     ): ExchangeRate? = dbQuery {
         getCurrencyIdByCode(baseCurrencyCode)?.let { baseId ->
             getCurrencyIdByCode(targetCurrencyCode)?.let { targetId ->
@@ -49,7 +50,7 @@ class DAOExchangeRatesFacadeImpl : DAOExchangeRatesFacade {
     override suspend fun updateExchangeRate(
         baseCurrencyCode: String,
         targetCurrencyCode: String,
-        rate: Double
+        rate: BigDecimal
     ): ExchangeRate? = dbQuery {
         ExchangeRates.update({
             (ExchangeRates.baseCurrencyId eq getCurrencyIdByCode(baseCurrencyCode)) and

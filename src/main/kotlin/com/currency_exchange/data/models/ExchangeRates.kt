@@ -14,7 +14,7 @@ object ExchangeRates : IntIdTable() {
         foreign = Currencies,
         onDelete = ReferenceOption.CASCADE
     )
-    val rate = double("rate")
+    val rate = decimal("rate", precision = 8, scale = 2)
 
     init {
         uniqueIndex(baseCurrencyId, targetCurrencyId)

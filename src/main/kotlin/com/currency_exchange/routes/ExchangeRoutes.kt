@@ -21,7 +21,7 @@ fun Route.exchangeRoutes() {
                 HttpStatusCode.BadRequest,
                 REQUIRED_FORM_FIELD_IS_MISSING
             )
-            val amount = call.request.queryParameters["amount"]?.toDoubleOrNull() ?: return@get call.respond(
+            val amount = call.request.queryParameters["amount"]?.toBigDecimalOrNull() ?: return@get call.respond(
                 HttpStatusCode.BadRequest, REQUIRED_FORM_FIELD_IS_MISSING
             )
             val exchange = ExchangeService(DAOExchangeRatesFacadeImpl()).getExchange(from, to, amount)
