@@ -25,7 +25,7 @@ class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade
 
             reverseExchangeRate != null -> {
                 val rate = 1 / reverseExchangeRate.rate
-                return@coroutineScope Exchange(
+                 Exchange(
                     reverseExchangeRate.targetCurrency,
                     reverseExchangeRate.baseCurrency,
                     rate,
@@ -46,7 +46,6 @@ class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade
             }
 
             else -> null
-
         }
     }
 
