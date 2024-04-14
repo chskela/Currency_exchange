@@ -86,11 +86,11 @@ open class CurrenciesRoutesKtTest {
     }
 
     @Test
-    fun `get request returns bad request for invalid currency code`() = testApplication {
+    fun `get request returns bad request for currency code missing at address`() = testApplication {
         val client = httpClient()
 
         //when
-        val response = client.get("/currency/te")
+        val response = client.get("/currency/")
         val message = response.bodyAsText()
         //then
         assertEquals(HttpStatusCode.BadRequest, response.status)

@@ -3,12 +3,10 @@ package com.currency_exchange.routes
 import com.currency_exchange.daoCurrencies
 import com.currency_exchange.utils.Constants.INTEGRITY_CONSTRAINT_VIOLATION_CODE
 import com.currency_exchange.utils.Messages.CURRENCY_CODE_IS_MISSING
-import com.currency_exchange.utils.Messages.CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT
 import com.currency_exchange.utils.Messages.CURRENCY_WITH_THIS_CODE_ALREADY_EXISTS
 import com.currency_exchange.utils.Messages.NO_CURRENCY_FOUND
 import com.currency_exchange.utils.Messages.REQUIRED_FORM_FIELD_IS_MISSING
 import com.currency_exchange.utils.Messages.SOMETHING_WENT_WRONG
-import com.currency_exchange.utils.Validation.isValidCurrencyCode
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -36,11 +34,6 @@ private fun Route.deleteCurrencyByCode() {
                 status = HttpStatusCode.BadRequest
             )
 
-        if (!isValidCurrencyCode(code)) return@delete call.respondText(
-            text = CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT,
-            status = HttpStatusCode.BadRequest
-        )
-
         try {
             daoCurrencies.deleteCurrencyByCode(code)
         } catch (e: Exception) {
@@ -54,18 +47,24 @@ private fun Route.deleteCurrencyByCode() {
 }
 
 private fun Route.getCurrencyByCode() {
-    get("/{code}") {
-        val code = call.parameters["code"]
-            ?: return@get call.respondText(
-                text = CURRENCY_CODE_IS_MISSING,
-                status = HttpStatusCode.BadRequest
-            )
+    get("/") {
+        call.respondText(
+            text = CURRENCY_CODE_IS_MISSING,
+            status = HttpStatusCode.BadRequest
+        )
+    }
 
-        if (!isValidCurrencyCode(code)) return@get call.respondText(
-            text = CURRENCY_CODE_MUST_BE_IN_ISO_4217_FORMAT,
+    get("/{code}") {
+        println("getCurrencyByCode     ${call.parameters}")
+        val code = call.parameters["code"] ?: return@get call.respondText(
+            text = CURRENCY_CODE_IS_MISSING,
             status = HttpStatusCode.BadRequest
         )
 
+        if (code.length != 3) return@get call.respondText(
+            text = CURRENCY_CODE_IS_MISSING,
+            status = HttpStatusCode.BadRequest
+        )
         try {
             daoCurrencies.getCurrencyByCode(code) ?: return@get call.respondText(
                 text = NO_CURRENCY_FOUND,
