@@ -20,6 +20,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.math.BigDecimal
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -114,7 +115,7 @@ open class ExchangeRateRoutesKtTest {
     fun `post request adding a new exchange rate to the database`() = testApplication {
         val client = httpClient()
         //given
-        val rate = 1.3
+        val rate = BigDecimal("1.30")
         //when
         val response = client.post("/exchangeRates") {
             header(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
