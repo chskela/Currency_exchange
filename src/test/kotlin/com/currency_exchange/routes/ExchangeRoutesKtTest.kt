@@ -13,6 +13,8 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -56,7 +58,7 @@ class ExchangeRoutesKtTest {
     @Test
     fun `get request returns direct rate exchange`() = testApplication {
         val client = httpClient()
-        val amount = 100.00
+        val amount = BigDecimal("100")
         //when
         val response = client.get("/exchange?from=usd&to=eur&amount=$amount")
         val exchange = response.body<Exchange>()
@@ -68,24 +70,27 @@ class ExchangeRoutesKtTest {
     @Test
     fun `get request returns reverse rate exchange`() = testApplication {
         val client = httpClient()
-        val amount = 100.00
+        val amount = BigDecimal("100")
         //when
         val response = client.get("/exchange?from=eur&to=usd&amount=$amount")
         val exchange = response.body<Exchange>()
         //then
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(amount / Constants.usdeur.rate, exchange.convertedAmount)
+        assertEquals(amount.divide(Constants.usdeur.rate, 2, RoundingMode.CEILING), exchange.convertedAmount)
     }
 
     @Test
     fun `get request returns cross rate exchange`() = testApplication {
         val client = httpClient()
-        val amount = 100.00
+        val amount = BigDecimal("100")
         //when
         val response = client.get("/exchange?from=eur&to=rub&amount=$amount")
         val exchange = response.body<Exchange>()
         //then
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(amount * Constants.usdrub.rate / Constants.usdeur.rate, exchange.convertedAmount)
+        assertEquals(
+            amount * Constants.usdrub.rate.divide(Constants.usdeur.rate, 2, RoundingMode.CEILING),
+            exchange.convertedAmount
+        )
     }
 }

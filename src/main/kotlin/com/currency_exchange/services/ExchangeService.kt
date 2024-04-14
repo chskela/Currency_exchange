@@ -3,8 +3,11 @@ package com.currency_exchange.services
 import com.currency_exchange.data.dao.DAOExchangeRatesFacade
 import com.currency_exchange.models.Exchange
 import com.currency_exchange.models.ExchangeRate
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade) {
 
@@ -25,18 +28,18 @@ class ExchangeService(private val daoExchangeRatesFacade: DAOExchangeRatesFacade
             )
 
             reverseExchangeRate != null -> {
-                val rate = BigDecimal(1) / reverseExchangeRate.rate
-                 Exchange(
+                val rate = BigDecimal("1").divide(reverseExchangeRate.rate, 2, RoundingMode.CEILING)
+                Exchange(
                     reverseExchangeRate.targetCurrency,
                     reverseExchangeRate.baseCurrency,
                     rate,
                     amount,
-                    amount * rate
+                    amount.divide(reverseExchangeRate.rate, 2, RoundingMode.CEILING)
                 )
             }
 
             exchangeRateUSDToFrom != null && exchangeRateUSDToTo != null -> {
-                val rate = exchangeRateUSDToTo.rate / exchangeRateUSDToFrom.rate
+                val rate = exchangeRateUSDToTo.rate.divide(exchangeRateUSDToFrom.rate, 2, RoundingMode.CEILING)
                 Exchange(
                     exchangeRateUSDToFrom.targetCurrency,
                     exchangeRateUSDToTo.targetCurrency,
